@@ -3,44 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tu galaxia mi vida 🤍</title>
+<title>Galaxia Romántica</title>
 
 <style>
 body{
     margin:0;
     overflow:hidden;
     background:black;
-    color:white;
     font-family:Arial, sans-serif;
-    text-align:center;
+    color:white;
 }
-
 .texto{
     position:absolute;
     width:100%;
-    top:15%;
-    z-index:2;
+    top:10%;
+    text-align:center;
+    z-index:10;
     pointer-events:none;
 }
-
 h1{
     font-size:2.5em;
-    text-shadow:0 0 15px #ffffff,0 0 40px #ff69b4;
+    text-shadow:0 0 20px #ff69b4,0 0 50px #9d00ff;
 }
-
 canvas{
-    position:fixed;
-    top:0;
-    left:0;
+    display:block;
 }
 </style>
 </head>
-
 <body>
 
 <div class="texto">
     <h1>Feliz Cumpleaños Mi BebeChita Hemosha 🎂💖</h1>
-    <p>hoy el universo esta en tus manos te dije que te daria todo</p>
 </div>
 
 <canvas id="galaxy"></canvas>
@@ -52,16 +45,36 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-let stars=[];
-let hearts=[];
-let offsetX=0, offsetY=0;
-let scale=1;
+let stars = [];
+let hearts = [];
+let angle = 0;
+let zoom = 1;
+let mouseX = 0;
+let mouseY = 0;
 
-for(let i=0;i<800;i++){
+const centerX = canvas.width/2;
+const centerY = canvas.height/2;
+
+/* ✨ EDITA TUS MENSAJES AQUÍ ✨ */
+const mensajes = [
+    "Te Amo 🤍",
+    "Mi Universo 🌌",
+    "Mi Princesa 👑",
+    "Siempre Juntos 💫"
+];
+/* ✨ FIN ✨ */
+
+for(let i=0;i<1500;i++){
+    let radius = Math.random()*300;
+    let branchAngle = (i%5)*(Math.PI*2/5);
+
+    let tieneTexto = Math.random() < 0.02;
+
     stars.push({
-        x:(Math.random()-0.5)*2000,
-        y:(Math.random()-0.5)*2000,
-        size:Math.random()*2
+        radius: radius,
+        angle: branchAngle + radius*0.05,
+        size: Math.random()*2,
+        text: tieneTexto ? mensajes[Math.floor(Math.random()*mensajes.length)] : null
     });
 }
 
@@ -77,21 +90,33 @@ function drawHeart(x,y,size){
 }
 
 function draw(){
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.fillStyle="black";
+    ctx.fillStyle="rgba(0,0,0,0.3)";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    ctx.translate(canvas.width/2+offsetX, canvas.height/2+offsetY);
-    ctx.scale(scale,scale);
+    angle += 0.002;
 
-    ctx.fillStyle="white";
     stars.forEach(star=>{
-        ctx.fillRect(star.x,star.y,star.size,star.size);
+        let x = centerX + 
+                (star.radius*Math.cos(star.angle+angle))*zoom + mouseX*0.02;
+        let y = centerY + 
+                (star.radius*Math.sin(star.angle+angle))*zoom + mouseY*0.02;
+
+        star.screenX = x;
+        star.screenY = y;
+
+        ctx.fillStyle="white";
+        ctx.fillRect(x,y,star.size,star.size);
+
+        if(star.text){
+            ctx.font="14px Arial";
+            ctx.fillStyle="white";
+            ctx.fillText(star.text,x+5,y);
+        }
     });
 
     hearts.forEach((heart,index)=>{
         drawHeart(heart.x,heart.y,heart.size);
-        heart.y-=1;
+        heart.y -= 1;
         heart.life--;
 
         if(heart.life<=0){
@@ -104,54 +129,52 @@ function draw(){
 
 draw();
 
-// mover galaxia
-let dragging=false, startX, startY;
+// detectar click en mensaje
+function checkClick(x,y){
+    stars.forEach(star=>{
+        if(star.text){
+            let dx = x - star.screenX;
+            let dy = y - star.screenY;
 
-canvas.addEventListener("mousedown",e=>{
-    dragging=true;
-    startX=e.clientX;
-    startY=e.clientY;
+            if(Math.abs(dx)<50 && Math.abs(dy)<20){
+                for(let i=0;i<8;i++){
+                    hearts.push({
+                        x:star.screenX + Math.random()*20-10,
+                        y:star.screenY,
+                        size:2,
+                        life:60
+                    });
+                }
+            }
+        }
+    });
+}
+
+canvas.addEventListener("click",(e)=>{
+    checkClick(e.clientX,e.clientY);
 });
 
-canvas.addEventListener("mousemove",e=>{
-    if(dragging){
-        offsetX+=e.clientX-startX;
-        offsetY+=e.clientY-startY;
-        startX=e.clientX;
-        startY=e.clientY;
-    }
+canvas.addEventListener("touchstart",(e)=>{
+    let touch=e.touches[0];
+    checkClick(touch.clientX,touch.clientY);
 });
 
-canvas.addEventListener("mouseup",()=>dragging=false);
+// movimiento
+canvas.addEventListener("mousemove",(e)=>{
+    mouseX = e.clientX - centerX;
+    mouseY = e.clientY - centerY;
+});
 
 // zoom
-canvas.addEventListener("wheel",e=>{
+canvas.addEventListener("wheel",(e)=>{
     e.preventDefault();
-    scale+=e.deltaY*-0.001;
-    scale=Math.min(Math.max(.2,scale),5);
+    zoom += e.deltaY*-0.001;
+    zoom = Math.min(Math.max(0.5,zoom),3);
 });
 
-// corazones al click
-canvas.addEventListener("click",e=>{
-    let rect=canvas.getBoundingClientRect();
-    hearts.push({
-        x:(e.clientX-rect.left-canvas.width/2-offsetX)/scale,
-        y:(e.clientY-rect.top-canvas.height/2-offsetY)/scale,
-        size:2,
-        life:60
-    });
-});
-
-// celular
-canvas.addEventListener("touchstart",e=>{
-    let touch=e.touches[0];
-    let rect=canvas.getBoundingClientRect();
-    hearts.push({
-        x:(touch.clientX-rect.left-canvas.width/2-offsetX)/scale,
-        y:(touch.clientY-rect.top-canvas.height/2-offsetY)/scale,
-        size:2,
-        life:60
-    });
+window.addEventListener("resize",()=>{
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 });
 </script>
 

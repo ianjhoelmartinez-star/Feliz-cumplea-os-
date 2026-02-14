@@ -2,180 +2,175 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Galaxia Romántica</title>
+<title>Galaxia 💖</title>
 
 <style>
 body{
     margin:0;
     overflow:hidden;
     background:black;
-    font-family:Arial, sans-serif;
-    color:white;
+    touch-action:none;
 }
-.texto{
+
+canvas{
     position:absolute;
+    top:0;
+    left:0;
+}
+
+.mensaje{
+    position:absolute;
+    top:40%;
     width:100%;
-    top:10%;
     text-align:center;
-    z-index:10;
+    font-size:32px;
+    color:white;
+    font-family:Arial;
+    text-shadow:0 0 20px white;
+    cursor:pointer;
+}
+
+.corazon{
+    position:absolute;
+    color:white;
+    font-size:20px;
+    animation:flotar 2s linear forwards;
     pointer-events:none;
 }
-h1{
-    font-size:2.5em;
-    text-shadow:0 0 20px #ff69b4,0 0 50px #9d00ff;
-}
-canvas{
-    display:block;
+
+@keyframes flotar{
+    0%{opacity:1; transform:translateY(0);}
+    100%{opacity:0; transform:translateY(-120px);}
 }
 </style>
 </head>
 <body>
 
-<div class="texto">
-    <h1>Feliz Cumpleaños Mi BebeChita Hemosha 🎂💖</h1>
+<audio autoplay loop>
+    <source src="ojitos.mp3" type="audio/mpeg">
+</audio>
+
+<canvas id="galaxia"></canvas>
+
+<div class="mensaje" onclick="crearCorazones(event)">
+FELIZ CUMPLEAÑOS MI BEBECHITA HEMOSHA 💖
 </div>
 
-<canvas id="galaxy"></canvas>
-
 <script>
-const canvas = document.getElementById("galaxy");
+const canvas = document.getElementById("galaxia");
 const ctx = canvas.getContext("2d");
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-let stars = [];
-let hearts = [];
-let angle = 0;
-let zoom = 1;
-let mouseX = 0;
-let mouseY = 0;
+let estrellas = [];
+let fugaces = [];
 
-const centerX = canvas.width/2;
-const centerY = canvas.height/2;
+let escala = 1;
+let offsetX = 0;
+let offsetY = 0;
+let arrastrando = false;
+let startX, startY;
 
-/* ✨ EDITA TUS MENSAJES AQUÍ ✨ */
-const mensajes = [
-    "Te Amo 🤍",
-    "Mi Universo 🌌",
-    "Mi Princesa 👑",
-    "Siempre Juntos 💫"
-];
-/* ✨ FIN ✨ */
-
-for(let i=0;i<1500;i++){
-    let radius = Math.random()*300;
-    let branchAngle = (i%5)*(Math.PI*2/5);
-
-    let tieneTexto = Math.random() < 0.02;
-
-    stars.push({
-        radius: radius,
-        angle: branchAngle + radius*0.05,
-        size: Math.random()*2,
-        text: tieneTexto ? mensajes[Math.floor(Math.random()*mensajes.length)] : null
+for(let i=0;i<600;i++){
+    estrellas.push({
+        x:(Math.random()-0.5)*2000,
+        y:(Math.random()-0.5)*2000,
+        r:Math.random()*2
     });
 }
 
-function drawHeart(x,y,size){
-    ctx.beginPath();
-    ctx.moveTo(x,y);
-    ctx.bezierCurveTo(x,y-3*size,x-3*size,y-3*size,x-3*size,y);
-    ctx.bezierCurveTo(x-3*size,y+3*size,x,y+4*size,x,y+6*size);
-    ctx.bezierCurveTo(x,y+4*size,x+3*size,y+3*size,x+3*size,y);
-    ctx.bezierCurveTo(x+3*size,y-3*size,x,y-3*size,x,y);
-    ctx.fillStyle="white";
-    ctx.fill();
-}
-
-function draw(){
-    ctx.fillStyle="rgba(0,0,0,0.3)";
+function dibujar(){
+    ctx.fillStyle="rgba(0,0,0,0.4)";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    angle += 0.002;
+    ctx.save();
+    ctx.translate(canvas.width/2 + offsetX, canvas.height/2 + offsetY);
+    ctx.scale(escala,escala);
 
-    stars.forEach(star=>{
-        let x = centerX + 
-                (star.radius*Math.cos(star.angle+angle))*zoom + mouseX*0.02;
-        let y = centerY + 
-                (star.radius*Math.sin(star.angle+angle))*zoom + mouseY*0.02;
-
-        star.screenX = x;
-        star.screenY = y;
-
-        ctx.fillStyle="white";
-        ctx.fillRect(x,y,star.size,star.size);
-
-        if(star.text){
-            ctx.font="14px Arial";
-            ctx.fillStyle="white";
-            ctx.fillText(star.text,x+5,y);
-        }
+    ctx.fillStyle="white";
+    estrellas.forEach(e=>{
+        ctx.beginPath();
+        ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
+        ctx.fill();
     });
 
-    hearts.forEach((heart,index)=>{
-        drawHeart(heart.x,heart.y,heart.size);
-        heart.y -= 1;
-        heart.life--;
-
-        if(heart.life<=0){
-            hearts.splice(index,1);
-        }
+    fugaces.forEach((f,i)=>{
+        ctx.beginPath();
+        ctx.moveTo(f.x,f.y);
+        ctx.lineTo(f.x-80,f.y+80);
+        ctx.strokeStyle="white";
+        ctx.stroke();
+        f.x+=10;
+        f.y+=10;
+        if(f.x>1000) fugaces.splice(i,1);
     });
 
-    requestAnimationFrame(draw);
+    ctx.restore();
+
+    requestAnimationFrame(dibujar);
 }
 
-draw();
-
-// detectar click en mensaje
-function checkClick(x,y){
-    stars.forEach(star=>{
-        if(star.text){
-            let dx = x - star.screenX;
-            let dy = y - star.screenY;
-
-            if(Math.abs(dx)<50 && Math.abs(dy)<20){
-                for(let i=0;i<8;i++){
-                    hearts.push({
-                        x:star.screenX + Math.random()*20-10,
-                        y:star.screenY,
-                        size:2,
-                        life:60
-                    });
-                }
-            }
-        }
+setInterval(()=>{
+    fugaces.push({
+        x:(Math.random()-0.5)*2000,
+        y:-1000
     });
-}
+},2000);
 
-canvas.addEventListener("click",(e)=>{
-    checkClick(e.clientX,e.clientY);
-});
+dibujar();
 
-canvas.addEventListener("touchstart",(e)=>{
-    let touch=e.touches[0];
-    checkClick(touch.clientX,touch.clientY);
-});
-
-// movimiento
-canvas.addEventListener("mousemove",(e)=>{
-    mouseX = e.clientX - centerX;
-    mouseY = e.clientY - centerY;
-});
-
-// zoom
-canvas.addEventListener("wheel",(e)=>{
+/* Zoom */
+canvas.addEventListener("wheel", e=>{
     e.preventDefault();
-    zoom += e.deltaY*-0.001;
-    zoom = Math.min(Math.max(0.5,zoom),3);
+    escala += e.deltaY * -0.001;
+    escala = Math.min(Math.max(.3, escala), 5);
 });
 
-window.addEventListener("resize",()=>{
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+/* Movimiento */
+canvas.addEventListener("mousedown", e=>{
+    arrastrando = true;
+    startX = e.clientX - offsetX;
+    startY = e.clientY - offsetY;
 });
+
+canvas.addEventListener("mousemove", e=>{
+    if(arrastrando){
+        offsetX = e.clientX - startX;
+        offsetY = e.clientY - startY;
+    }
+});
+
+canvas.addEventListener("mouseup", ()=> arrastrando=false);
+
+/* Celular */
+canvas.addEventListener("touchstart", e=>{
+    arrastrando = true;
+    startX = e.touches[0].clientX - offsetX;
+    startY = e.touches[0].clientY - offsetY;
+});
+
+canvas.addEventListener("touchmove", e=>{
+    if(arrastrando){
+        offsetX = e.touches[0].clientX - startX;
+        offsetY = e.touches[0].clientY - startY;
+    }
+});
+
+canvas.addEventListener("touchend", ()=> arrastrando=false);
+
+/* Corazones */
+function crearCorazones(e){
+    for(let i=0;i<6;i++){
+        let c = document.createElement("div");
+        c.className="corazon";
+        c.innerHTML="🤍";
+        c.style.left=(e.clientX||e.touches?.[0]?.clientX)+"px";
+        c.style.top=(e.clientY||e.touches?.[0]?.clientY)+"px";
+        document.body.appendChild(c);
+        setTimeout(()=>c.remove(),2000);
+    }
+}
 </script>
 
 </body>

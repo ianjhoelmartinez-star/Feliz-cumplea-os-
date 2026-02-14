@@ -6,32 +6,32 @@
 <title>Galaxia</title>
 
 <style>
-body {
-    margin: 0;
-    overflow: hidden;
-    background: black;
-    color: white;
-    font-family: Arial, sans-serif;
-    text-align: center;
+body{
+    margin:0;
+    overflow:hidden;
+    background:black;
+    font-family:Arial, sans-serif;
+    color:white;
+    text-align:center;
 }
 
-.texto {
-    position: absolute;
-    width: 100%;
-    top: 20%;
-    z-index: 2;
+.texto{
+    position:absolute;
+    width:100%;
+    top:20%;
+    z-index:2;
 }
 
-h1 {
-    font-size: 2.5em;
-    text-shadow: 0 0 15px #ff69b4, 0 0 40px #9d00ff;
+h1{
+    font-size:2.5em;
+    text-shadow:0 0 15px #ff69b4,0 0 40px #9d00ff;
 }
 
-canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1;
+canvas{
+    position:fixed;
+    top:0;
+    left:0;
+    z-index:1;
 }
 </style>
 </head>
@@ -53,38 +53,55 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 let stars = [];
-let numStars = 800;
+let shootingStars = [];
 
-for (let i = 0; i < numStars; i++) {
+for(let i=0;i<400;i++){
     stars.push({
-        x: Math.random() * canvas.width - canvas.width / 2,
-        y: Math.random() * canvas.height - canvas.height / 2,
-        z: Math.random() * canvas.width
+        x:Math.random()*canvas.width,
+        y:Math.random()*canvas.height,
+        size:Math.random()*2
     });
 }
 
-function animate() {
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+function createShootingStar(){
+    shootingStars.push({
+        x:Math.random()*canvas.width,
+        y:0,
+        length:Math.random()*80+10,
+        speed:Math.random()*10+6,
+        size:2
+    });
+}
 
-    for (let i = 0; i < numStars; i++) {
-        let star = stars[i];
+function animate(){
+    ctx.fillStyle="black";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
 
-        star.z -= 2;
+    // estrellas normales
+    ctx.fillStyle="white";
+    stars.forEach(star=>{
+        ctx.fillRect(star.x,star.y,star.size,star.size);
+    });
 
-        if (star.z <= 0) {
-            star.z = canvas.width;
+    // estrellas fugaces
+    shootingStars.forEach((star,index)=>{
+        ctx.strokeStyle="white";
+        ctx.lineWidth=star.size;
+        ctx.beginPath();
+        ctx.moveTo(star.x,star.y);
+        ctx.lineTo(star.x-star.length,star.y+star.length);
+        ctx.stroke();
+
+        star.x+=star.speed;
+        star.y+=star.speed;
+
+        if(star.y>canvas.height || star.x>canvas.width){
+            shootingStars.splice(index,1);
         }
+    });
 
-        let k = 128.0 / star.z;
-        let px = star.x * k + canvas.width / 2;
-        let py = star.y * k + canvas.height / 2;
-
-        if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) {
-            let size = (1 - star.z / canvas.width) * 3;
-            ctx.fillStyle = "white";
-            ctx.fillRect(px, py, size, size);
-        }
+    if(Math.random()<0.02){
+        createShootingStar();
     }
 
     requestAnimationFrame(animate);
@@ -92,9 +109,9 @@ function animate() {
 
 animate();
 
-window.addEventListener("resize", () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+window.addEventListener("resize",()=>{
+    canvas.width=window.innerWidth;
+    canvas.height=window.innerHeight;
 });
 </script>
 

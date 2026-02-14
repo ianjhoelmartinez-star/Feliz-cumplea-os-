@@ -3,35 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Galaxia</title>
+<title>Galaxia Romántica</title>
 
 <style>
 body{
     margin:0;
     overflow:hidden;
     background:black;
-    font-family:Arial, sans-serif;
     color:white;
+    font-family:Arial, sans-serif;
     text-align:center;
 }
 
 .texto{
     position:absolute;
     width:100%;
-    top:20%;
+    top:15%;
     z-index:2;
+    pointer-events:none;
 }
 
 h1{
     font-size:2.5em;
-    text-shadow:0 0 15px #ff69b4,0 0 40px #9d00ff;
+    text-shadow:0 0 15px #ffffff,0 0 40px #ff69b4;
 }
 
 canvas{
     position:fixed;
     top:0;
     left:0;
-    z-index:1;
 }
 </style>
 </head>
@@ -40,78 +40,118 @@ canvas{
 
 <div class="texto">
     <h1>Feliz Cumpleaños Mi BebeChita Hemosha 🎂💖</h1>
-    <p>El universo hoy brilla por ti ✨</p>
+    <p>hoy el universo esta en tus manos te dije que te daria todo</p>
 </div>
 
-<canvas id="space"></canvas>
+<canvas id="galaxy"></canvas>
 
 <script>
-const canvas = document.getElementById("space");
+const canvas = document.getElementById("galaxy");
 const ctx = canvas.getContext("2d");
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-let stars = [];
-let shootingStars = [];
+let stars=[];
+let hearts=[];
+let offsetX=0, offsetY=0;
+let scale=1;
 
-for(let i=0;i<400;i++){
+for(let i=0;i<800;i++){
     stars.push({
-        x:Math.random()*canvas.width,
-        y:Math.random()*canvas.height,
+        x:(Math.random()-0.5)*2000,
+        y:(Math.random()-0.5)*2000,
         size:Math.random()*2
     });
 }
 
-function createShootingStar(){
-    shootingStars.push({
-        x:Math.random()*canvas.width,
-        y:0,
-        length:Math.random()*80+10,
-        speed:Math.random()*10+6,
-        size:2
-    });
+function drawHeart(x,y,size){
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    ctx.bezierCurveTo(x,y-3*size,x-3*size,y-3*size,x-3*size,y);
+    ctx.bezierCurveTo(x-3*size,y+3*size,x,y+4*size,x,y+6*size);
+    ctx.bezierCurveTo(x,y+4*size,x+3*size,y+3*size,x+3*size,y);
+    ctx.bezierCurveTo(x+3*size,y-3*size,x,y-3*size,x,y);
+    ctx.fillStyle="white";
+    ctx.fill();
 }
 
-function animate(){
+function draw(){
+    ctx.setTransform(1,0,0,1,0,0);
     ctx.fillStyle="black";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    // estrellas normales
+    ctx.translate(canvas.width/2+offsetX, canvas.height/2+offsetY);
+    ctx.scale(scale,scale);
+
     ctx.fillStyle="white";
     stars.forEach(star=>{
         ctx.fillRect(star.x,star.y,star.size,star.size);
     });
 
-    // estrellas fugaces
-    shootingStars.forEach((star,index)=>{
-        ctx.strokeStyle="white";
-        ctx.lineWidth=star.size;
-        ctx.beginPath();
-        ctx.moveTo(star.x,star.y);
-        ctx.lineTo(star.x-star.length,star.y+star.length);
-        ctx.stroke();
+    hearts.forEach((heart,index)=>{
+        drawHeart(heart.x,heart.y,heart.size);
+        heart.y-=1;
+        heart.life--;
 
-        star.x+=star.speed;
-        star.y+=star.speed;
-
-        if(star.y>canvas.height || star.x>canvas.width){
-            shootingStars.splice(index,1);
+        if(heart.life<=0){
+            hearts.splice(index,1);
         }
     });
 
-    if(Math.random()<0.02){
-        createShootingStar();
-    }
-
-    requestAnimationFrame(animate);
+    requestAnimationFrame(draw);
 }
 
-animate();
+draw();
 
-window.addEventListener("resize",()=>{
-    canvas.width=window.innerWidth;
-    canvas.height=window.innerHeight;
+// mover galaxia
+let dragging=false, startX, startY;
+
+canvas.addEventListener("mousedown",e=>{
+    dragging=true;
+    startX=e.clientX;
+    startY=e.clientY;
+});
+
+canvas.addEventListener("mousemove",e=>{
+    if(dragging){
+        offsetX+=e.clientX-startX;
+        offsetY+=e.clientY-startY;
+        startX=e.clientX;
+        startY=e.clientY;
+    }
+});
+
+canvas.addEventListener("mouseup",()=>dragging=false);
+
+// zoom
+canvas.addEventListener("wheel",e=>{
+    e.preventDefault();
+    scale+=e.deltaY*-0.001;
+    scale=Math.min(Math.max(.2,scale),5);
+});
+
+// corazones al click
+canvas.addEventListener("click",e=>{
+    let rect=canvas.getBoundingClientRect();
+    hearts.push({
+        x:(e.clientX-rect.left-canvas.width/2-offsetX)/scale,
+        y:(e.clientY-rect.top-canvas.height/2-offsetY)/scale,
+        size:2,
+        life:60
+    });
+});
+
+// celular
+canvas.addEventListener("touchstart",e=>{
+    let touch=e.touches[0];
+    let rect=canvas.getBoundingClientRect();
+    hearts.push({
+        x:(touch.clientX-rect.left-canvas.width/2-offsetX)/scale,
+        y:(touch.clientY-rect.top-canvas.height/2-offsetY)/scale,
+        size:2,
+        life:60
+    });
 });
 </script>
 
